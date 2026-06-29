@@ -1,0 +1,28 @@
+# Python
+backend/.venv/
+backend/__pycache__/
+backend/*.pyc
+
+# React
+frontend/node_modules/
+
+# Environment
+.env
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# IDE
+.vscode/
+
+# Logs
+*.log
+
+# Database
+*.db
+
+# FAISS
+backend/vector_store/
