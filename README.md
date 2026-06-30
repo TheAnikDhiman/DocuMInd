@@ -36,3 +36,10 @@ AI-powered document question answering system built with FastAPI, React, Postgre
 ```bash
 cd backend
 uvicorn main:app --reload
+```
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
