@@ -1,42 +1,38 @@
 # DocuMind
 
-AI-powered document intelligence application built with FastAPI, React, PostgreSQL, and Google Gemini.
+AI-powered document question answering system built with FastAPI, React, PostgreSQL, LangChain, and Google Gemini.
 
 ## Features
 
-- Upload PDF documents
-- Parse document contents
-- Intelligent chunking
-- AI-powered question answering
-- Resume summarization
-- Semantic document understanding
+- 📄 Upload PDF documents
+- 🤖 Ask questions about uploaded documents
+- ✂️ Automatic text chunking
+- 🧠 AI-powered contextual answers
+- 📝 Resume summarization
+- ⚡ FastAPI backend + React frontend
 
 ## Tech Stack
 
 ### Backend
-
 - FastAPI
-- PostgreSQL
 - SQLAlchemy
+- PostgreSQL
 - LangChain
 - Google Gemini
 
 ### Frontend
-
 - React
 - Vite
 - Axios
 
-## Run Backend
+## Screenshots
+
+![alt text](image.png)
+
+## Run Locally
+
+### Backend
 
 ```bash
 cd backend
 uvicorn main:app --reload
-```
-
-## Run Frontend
-
-```bash
-cd frontend
-npm run dev
-```
