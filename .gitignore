@@ -1,29 +1,7 @@
-# Python
-backend/.venv/
-backend/__pycache__/
-backend/**/*.pyc
-
-# Environment
-backend/.env
-
-# Node
-frontend/node_modules/
-
-# Vite
-frontend/dist/
-
-# VS Code
-.vscode/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Uploads
-backend/app/storage/documents/
-
-# Vector Store
-backend/vectorstore/
-
-# Logs
+node_modules/
+dist/
+.env
+.env.local
 *.log
+__pycache__/
+venv/
