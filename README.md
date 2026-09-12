@@ -1,132 +1,584 @@
-# DocuMind — RAG Document Intelligence
+# DocuMind — AI Document Intelligence & RAG
 
-DocuMind is an enterprise Retrieval-Augmented Generation (RAG) system that allows users to upload documents (PDF, DOCX, TXT) and ask complex questions answered strictly from document content, complete with source traceability and anti-hallucination guarantees.
+DocuMind is an AI-powered document intelligence workspace that lets users upload documents, ask questions in natural language, and receive grounded answers with source-level traceability.
+
+The project focuses on building a practical Retrieval-Augmented Generation (RAG) system with document ingestion, semantic chunking, vector retrieval, prompt routing, citation tracking, and an interactive UI.
 
 ---
 
-## Key Architecture & Components
+## Why DocuMind?
 
-### 1. Ingestion Pipeline
-- **Multi-Format Extraction**: Ingests `.pdf` (page-by-page layout), `.docx` (paragraphs, bullet lists, and data tables), and `.txt` files.
-- **Text Normalization**: Strips control characters, normalizes line breaks (`\r\n` to `\n`), condenses redundant whitespace, and preserves paragraph breaks.
+Many document Q&A systems focus only on generating an answer.
+
+DocuMind focuses on **grounded and traceable answers** by connecting generated responses back to the retrieved document context and source metadata.
+
+The system combines:
+
+- Multi-format document ingestion
+- Recursive semantic chunking
+- Gemini-powered embeddings and generation
+- Similarity-based retrieval
+- Query-intent-aware prompt routing
+- Citation-backed answers
+- Source traceability
+- FAISS scalability benchmarking
+- Interactive document and retrieval inspection
+
+---
+
+## Key Features
+
+### 1. Multi-Format Document Ingestion
+
+Upload and process:
+
+- PDF
+- DOCX
+- TXT
+
+The application extracts document text, normalizes it, preserves source information, and converts documents into retrievable chunks.
 
 ### 2. Semantic Chunking
-- **Recursive Character Splitting**: Implemented based on LangChain's `RecursiveCharacterTextSplitter`.
-- **Separator Hierarchy**: Prioritizes paragraph boundaries (`\n\n`), sentence terminators (`. `, `? `, `! `, `; `), and word boundaries (` `) to preserve semantic cohesion.
-- **Tunable Overlap**: Configurable chunk size (300–1,500 chars) and overlap (50–400 chars) to prevent context loss at chunk boundaries.
-- **Traceability Metadata**: Every chunk tracks:
-  - `chunk_id`: Unique identifier (e.g., `Cloud_Security_Compliance_Framework_p3_c3`)
-  - `source`: Source document filename
-  - `page_number`: Original page location
-  - `char_start` & `char_end`: Exact character offsets
-  - `token_count`: Estimated token size
 
-### 3. Vector Store & 10,000+ Scalability (FAISS)
-- **Sub-200ms Search SLA**: Efficient vector retrieval capable of handling 10,000+ chunks in under 15ms.
-- **Supported Index Topologies**:
-  - `HNSW` (`IndexHNSWFlat`): Hierarchical Navigable Small World graph for sub-linear query time.
-  - `IVF` (`IndexIVFFlat`): Inverted file clustering with Voronoi partitioning (`nprobe=8`) for high vector scale.
-  - `FLAT` (`IndexFlatIP`): Exact inner-product cosine similarity scan.
-- **Benchmark Suite**: Live interactive benchmark tool and standalone CLI runner (`python3 build_index.py --chunks 10000`) measuring Average, P95, and P99 latencies.
+Documents are split into context-aware chunks using recursive separator priorities.
 
-### 4. 5 RAG Prompt Template Variants
-1. **Factual Inquiry**: Direct, concise answers strictly grounded in context with precise citations.
-2. **Summarization / Synthesis**: Structured executive summaries and key findings.
-3. **Comparative Analysis**: Objective side-by-side dimensional comparisons.
-4. **Structured Extraction**: Extracts metrics, dates, and specifications into clean markdown tables.
-5. **Multi-Hop Reasoning**: Step-by-step associative deductions linking disjoint chunks across pages.
-- **Automatic Classification**: Detects user intent and switches prompt templates automatically.
+The default chunking strategy uses:
 
-### 5. Hallucination Mitigation & Strict Grounding
-- **Negative Constraint Rule**: The system explicitly returns:
-  `"Not found in document. The provided document sections do not contain information regarding [topic]."`
-  whenever retrieved chunks lack sufficient semantic evidence.
-- **Source Citations**: Every factual statement is backed by an interactive citation badge:
-  `[Doc: <source>, Chunk: <chunk_id>, Page: <page_number>]`.
-- **Interactive Traceability Drawer**: Clicking any citation immediately highlights the source passage in the side panel with cosine similarity match percentages.
+- Paragraph boundaries
+- Line boundaries
+- Sentence boundaries
+- Word boundaries
+
+Each chunk stores useful traceability metadata such as:
+
+```text
+chunk_id
+source
+page_number
+char_start
+char_end
+token_count
+```
+
+This allows retrieved information to be traced back to its original document location.
+
+### 3. Grounded RAG Question Answering
+
+The main application follows a RAG pipeline:
+
+```text
+Document
+   ↓
+Text Extraction
+   ↓
+Cleaning & Normalization
+   ↓
+Semantic Chunking
+   ↓
+Gemini Embeddings
+   ↓
+Vector Retrieval
+   ↓
+Relevant Context
+   ↓
+Prompt Construction
+   ↓
+Gemini Generation
+   ↓
+Grounded Answer + Citations
+```
+
+The generation layer is instructed to answer strictly from the retrieved document context.
+
+When the available context is insufficient, the system can return a "Not found in document" response instead of intentionally inventing unsupported information.
+
+### 4. Multiple RAG Prompt Strategies
+
+DocuMind supports different prompt strategies based on the user's intent:
+
+1. **Factual Inquiry**  
+   Direct answers grounded in the retrieved context.
+
+2. **Summarization / Synthesis**  
+   Structured summaries and key takeaways.
+
+3. **Comparative Analysis**  
+   Side-by-side comparison of concepts, entities, or metrics.
+
+4. **Structured Extraction**  
+   Extraction of dates, numbers, metrics, specifications, and other structured information.
+
+5. **Multi-Hop Reasoning**  
+   Combining information from multiple retrieved chunks.
+
+The application can automatically classify the query and select an appropriate strategy.
+
+### 5. Source Traceability
+
+Answers are associated with source metadata using citation tags such as:
+
+```text
+[Doc: <source>, Chunk: <chunk_id>, Page: <page_number>]
+```
+
+The UI provides a source traceability experience so users can inspect the retrieved evidence behind an answer.
+
+### 6. Interactive Chunk Inspection
+
+The application provides a chunk inspection view for exploring:
+
+- Document chunks
+- Chunk metadata
+- Retrieval scores
+- Source locations
+- Vector-related information
+
+This makes the retrieval stage more observable rather than treating it as a black box.
+
+### 7. Retrieval & Scalability Benchmarking
+
+The repository also contains an optional Python/FastAPI + FAISS implementation for retrieval experiments and scalability benchmarking.
+
+Supported FAISS index types include:
+
+- **HNSW** — graph-based approximate nearest-neighbor retrieval
+- **IVF** — inverted-file based vector search
+- **Flat** — exhaustive exact similarity search
+
+The benchmark tooling allows retrieval behavior to be evaluated at larger vector counts.
+
+> Benchmark results depend on the hardware, dataset, embedding dimensionality, and runtime environment. The repository does not treat a single benchmark run as a universal production SLA.
+
+---
+
+## Architecture
+
+### Main Web Application
+
+The primary application runtime uses React, TypeScript, Node.js, Express, Gemini, and in-memory vector retrieval.
+
+```mermaid
+flowchart TD
+    A[User] --> B[React + TypeScript UI]
+
+    B --> C[Node + Express Server]
+
+    C --> D[Document Ingestion]
+    D --> E[Text Cleaning]
+    E --> F[Recursive Chunking]
+
+    F --> G[Gemini Embeddings]
+    G --> H[In-Memory Vector Store]
+
+    B --> I[User Query]
+    I --> J[Query Classification]
+    J --> K[Retrieve Relevant Chunks]
+
+    H --> K
+    K --> L[Context Assembly]
+    L --> M[Prompt Strategy]
+    M --> N[Gemini Generation]
+
+    N --> O[Grounded Answer]
+    O --> P[Source Citations]
+```
+
+### Optional FAISS Backend
+
+The repository also includes a separate Python implementation for FAISS-based retrieval and scalability experiments:
+
+```mermaid
+flowchart LR
+    A[Documents] --> B[Python Ingestion]
+    B --> C[Chunking]
+    C --> D[Embeddings]
+    D --> E[FAISS Index]
+
+    Q[Query] --> R[Query Embedding]
+    R --> E
+    E --> F[Top-K Retrieval]
+    F --> G[Context]
+    G --> H[Gemini Generation]
+```
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, TypeScript, Vite |
+| UI | Tailwind CSS, Lucide React, Motion |
+| Backend | Node.js, Express |
+| AI / LLM | Google Gemini |
+| Embeddings | Gemini Embedding 2 Preview |
+| Main Retrieval | In-memory cosine similarity |
+| Scalability / Benchmarking | FAISS |
+| Optional Backend | Python, FastAPI |
+| Document Parsing | PDF, DOCX, TXT |
+| PDF Processing | pdf-parse, pdf-lib, pdfkit |
+| DOCX Processing | Mammoth |
+| Vector Math | Cosine similarity / FAISS |
+| Package Management | npm / pip |
+
+---
+
+## Gemini Models
+
+The application is designed around Google's Gemini APIs.
+
+Current model configuration:
+
+```text
+Generation:
+gemini-3.8-flash
+
+Embeddings:
+gemini-embedding-2-preview
+```
+
+The Gemini API key is loaded through an environment variable rather than being stored in source code.
 
 ---
 
 ## Project Structure
 
-```
-.
-├── backend/                        # Python FastAPI & LangChain / FAISS Backend
-│   ├── ingestion.py                # PDF, DOCX, TXT extraction & cleaning
-│   ├── chunking.py                 # RecursiveCharacterTextSplitter logic
-│   ├── faiss_index.py              # FAISS HNSW, IVF, Flat vector store
-│   ├── rag_engine.py               # Prompt templates & query classification
-│   ├── main.py                     # FastAPI async SSE streaming server
-│   ├── build_index.py              # 10,000+ scale benchmark runner
-│   └── requirements.txt            # Python dependencies
-├── src/                            # React + TypeScript Frontend
+```text
+DocuMind/
+│
+├── backend/
+│   ├── ingestion.py
+│   ├── chunking.py
+│   ├── faiss_index.py
+│   ├── rag_engine.py
+│   ├── main.py
+│   ├── build_index.py
+│   └── requirements.txt
+│
+├── public/
+│
+├── src/
 │   ├── components/
-│   │   ├── Header.tsx              # Brand, vector stats, view switcher
-│   │   ├── DocumentManager.tsx     # Drag-and-drop vault & chunking tuner
-│   │   ├── ChatInterface.tsx       # Streaming SSE chat with template switcher
-│   │   ├── SourceTraceabilityPanel.tsx # Interactive citation & chunk inspector
-│   │   ├── ChunkInspector.tsx      # Cross-document chunk & vector browser
-│   │   ├── BenchmarkModal.tsx      # Live 10k vector latency benchmark
-│   │   └── SettingsDrawer.tsx      # Top-k, temperature, and threshold controls
-│   ├── types.ts                    # Shared TypeScript interfaces
-│   ├── App.tsx                     # Main layout & stream orchestration
-│   ├── main.tsx                    # React entry point
-│   └── index.css                   # Tailwind styles
-├── server.ts                       # Express full-stack proxy & Vite integration
-├── build_index.py                  # CLI entry point for FAISS benchmark
-├── package.json                    # Node dependencies & build scripts
-└── metadata.json                   # AI Studio app metadata
+│   │   ├── Header.tsx
+│   │   ├── DocumentManager.tsx
+│   │   ├── ChatInterface.tsx
+│   │   ├── SourceTraceabilityPanel.tsx
+│   │   ├── ChunkInspector.tsx
+│   │   ├── BenchmarkModal.tsx
+│   │   └── SettingsDrawer.tsx
+│   │
+│   ├── types.ts
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── index.css
+│
+├── server.ts
+├── build_index.py
+├── generate_pdf.ts
+├── index.html
+├── metadata.json
+├── package.json
+├── package-lock.json
+├── tsconfig.json
+├── vite.config.ts
+└── .env.example
 ```
 
 ---
 
-## Running the Application
+## Getting Started
 
-### Option A: Full-Stack Web Application (Node + Express + Vite)
-The application runs as a full-stack service on port 3000:
+### Prerequisites
+
+Make sure you have installed:
+
+- Node.js 18+
+- npm
+- Python 3.10+ (only required for the optional Python / FAISS backend)
+- Git
+
+---
+
+## 1. Clone the Repository
+
 ```bash
-# Start development server
+git clone https://github.com/TheAnikDhiman/DocuMInd.git
+cd DocuMInd
+```
+
+---
+
+## 2. Install Node Dependencies
+
+```bash
+npm install
+```
+
+---
+
+## 3. Configure Environment Variables
+
+Create a `.env` file in the project root.
+
+You can start from:
+
+```bash
+copy .env.example .env
+```
+
+On macOS / Linux:
+
+```bash
+cp .env.example .env
+```
+
+Then add your Gemini API key:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+Do not commit `.env` or expose your API key publicly.
+
+---
+
+## 4. Run the Main Application
+
+Start the development server:
+
+```bash
 npm run dev
+```
 
-# Build for production
+Then open:
+
+```text
+http://localhost:3000
+```
+
+---
+
+## 5. Build for Production
+
+```bash
 npm run build
+```
 
-# Start production server
+Start the production server:
+
+```bash
 npm start
 ```
 
-#### Troubleshooting Port Conflicts (`EADDRINUSE 0.0.0.0:3000`):
-If port 3000 is still occupied by a previously running process:
-- **Windows PowerShell**:
-  ```powershell
-  Stop-Process -Id (Get-NetTCPConnection -LocalPort 3000).OwningProcess -Force
-  ```
-- **Linux / macOS**:
-  ```bash
-  npx kill-port 3000
-  ```
-- *Note for PowerShell*: Use `;` or `&&` to run sequential commands rather than `>>` (which redirects output to a file):
-  ```powershell
-  npm run build; npm start
-  ```
+---
 
-### Option B: Python Backend (FastAPI + FAISS + LangChain)
+## Optional: Python + FAISS Backend
+
+The Python backend is separate from the primary Node/Express runtime.
+
+Create and activate a virtual environment:
+
+### Windows
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+### macOS / Linux
+
 ```bash
-# Install Python dependencies
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Install Python dependencies:
+
+```bash
 pip install -r backend/requirements.txt
+```
 
-# Run 10,000+ chunk FAISS benchmark
-python3 build_index.py --chunks 10000 --index-type HNSW
+Start the FastAPI server:
 
-# Start FastAPI streaming server
+```bash
 uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 ---
 
-## Verification & Tuning Guidelines
+## FAISS Scalability Benchmark
 
-- **Tune Chunk Size**: Default is 800 characters (~200 tokens). For dense technical documents, 500–650 characters yields higher precision.
-- **Tune Overlap**: Set to 15–20% of chunk size (e.g. 120–150 characters) to prevent information clipping at boundaries.
-- **Top-K Retrieval**: Recommended 4–6 chunks to balance context completeness with inference latency.
-- **Zero-Temperature**: Keep generation temperature at `0.1`–`0.2` to ensure verifiable grounding.
+The repository includes a standalone FAISS benchmark runner.
+
+Example:
+
+```bash
+python build_index.py --chunks 10000 --index-type HNSW
+```
+
+Available index types:
+
+```text
+FLAT
+IVF
+HNSW
+ALL
+```
+
+The benchmark measures retrieval latency statistics for the selected test configuration.
+
+---
+
+## API Overview
+
+The Node server exposes endpoints for the main application workflow, including:
+
+```text
+GET  /api/health
+GET  /api/documents
+POST /api/documents/upload
+DELETE /api/documents/:id
+POST /api/chat/stream
+POST /api/benchmark
+GET  /api/chunks
+GET  /api/chunks/:id
+```
+
+The exact API surface may evolve as the project develops.
+
+---
+
+## Retrieval Configuration
+
+The application exposes retrieval-related controls such as:
+
+- Top-K retrieval
+- Similarity score threshold
+- Chunk size
+- Chunk overlap
+- Prompt strategy
+- Retrieval/index configuration for supported benchmark flows
+
+These controls allow experimentation with the trade-off between retrieval quality, context size, and latency.
+
+---
+
+## Hallucination Mitigation
+
+DocuMind uses several techniques to reduce unsupported answers:
+
+### Strict Context Grounding
+
+The generation prompt explicitly instructs the model to use the retrieved document context rather than external assumptions.
+
+### Citation Requirements
+
+Retrieved evidence is associated with source and chunk metadata.
+
+### Retrieval Thresholding
+
+Low-confidence retrieval can be rejected when the available evidence does not meet the configured similarity threshold.
+
+### Missing-Evidence Response
+
+When the retrieved context does not provide sufficient information, the application can respond with a clear "Not found in document" message instead of intentionally fabricating an answer.
+
+---
+
+## Example Workflow
+
+```text
+1. Open DocuMind
+2. Upload a PDF, DOCX, or TXT document
+3. Document text is extracted
+4. Text is cleaned and chunked
+5. Chunks receive metadata
+6. Embeddings are generated
+7. Chunks are stored for retrieval
+8. Ask a question
+9. Query is embedded
+10. Relevant chunks are retrieved
+11. Prompt strategy is selected
+12. Gemini generates a grounded response
+13. Sources are displayed alongside the answer
+```
+
+---
+
+## Current Scope
+
+DocuMind is currently designed as a **portfolio-grade RAG engineering project** focused on:
+
+- Retrieval-Augmented Generation
+- Document intelligence
+- Source traceability
+- AI-assisted information retrieval
+- Retrieval experimentation
+- AI product UI/UX
+
+The architecture is intentionally modular so the retrieval layer can be evolved independently from the application interface and generation layer.
+
+---
+
+## Future Improvements
+
+Potential future work includes:
+
+- Persistent vector database support
+- Authentication and multi-user document workspaces
+- Cloud document storage
+- Background document processing
+- Better OCR support for scanned documents
+- Hybrid keyword + vector retrieval
+- Reranking models
+- Conversation memory
+- Evaluation datasets and automated RAG evaluation
+- Production observability
+- Cloud deployment
+- Streaming retrieval telemetry
+- More advanced agentic document workflows
+
+---
+
+## Project Goals
+
+DocuMind is built to explore the engineering challenges behind practical AI applications rather than treating an LLM as a standalone chatbot.
+
+The project focuses on the complete pipeline:
+
+```text
+Documents
+    ↓
+Data Processing
+    ↓
+Chunking
+    ↓
+Embeddings
+    ↓
+Retrieval
+    ↓
+Prompt Strategy
+    ↓
+LLM Generation
+    ↓
+Grounded Response
+    ↓
+Source Traceability
+```
+
+---
+
+## Author
+
+**Anik Dhiman**
+
+AI & ML Engineering • Full-Stack AI • RAG • Agentic AI
+
+GitHub:  
+https://github.com/TheAnikDhiman
+
+---
+
+## License
+
+This project is intended for learning, experimentation, and portfolio demonstration.
