@@ -1,6 +1,0 @@
-{
-  "name": "DocuMind",
-  "description": "RAG document intelligence system with semantic chunking, vector indexing, citation traceability, and hallucination mitigation powered by Gemini.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
