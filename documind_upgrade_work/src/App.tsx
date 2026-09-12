@@ -28,8 +28,6 @@ export default function App() {
     template: "auto",
     top_k: 4,
     score_threshold: 0.1,
-    temperature: 0.2,
-    index_type: "HNSW",
     chunk_size: 800,
     chunk_overlap: 150,
   });
@@ -104,8 +102,6 @@ export default function App() {
           template,
           top_k: settings.top_k,
           score_threshold: settings.score_threshold,
-          temperature: settings.temperature,
-          index_type: settings.index_type,
         }),
       });
 

@@ -10,7 +10,13 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
+
+// Gemini model configuration. Keep model IDs in environment variables so the
+// provider/model can be upgraded without editing application code.
+const GEMINI_GENERATION_MODEL = process.env.GEMINI_GENERATION_MODEL || "gemini-3.8-flash";
+const GEMINI_EMBEDDING_MODEL = process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-2-preview";
+const GEMINI_THINKING_LEVEL = process.env.GEMINI_THINKING_LEVEL || "medium";
 
 app.use(express.json());
 
@@ -164,7 +170,7 @@ async function computeEmbedding(text: string, dim: number = 768): Promise<number
   if (ai) {
     try {
       const res: any = await ai.models.embedContent({
-        model: "gemini-embedding-2-preview",
+        model: GEMINI_EMBEDDING_MODEL,
         contents: text.slice(0, 2000),
       });
       const values = res.embedding?.values || res.embeddings?.[0]?.values;
@@ -422,7 +428,7 @@ app.get("/api/health", (req, res) => {
     service: "DocuMind Full-Stack RAG Engine",
     document_count: documents.size,
     vector_count: chunksStore.length,
-    index_type: "HNSW",
+    index_type: "In-memory exact cosine similarity",
     sub_200ms_sla: true,
   });
 });
@@ -608,7 +614,6 @@ app.post("/api/chat/stream", async (req, res) => {
     template = "auto",
     top_k = 4,
     score_threshold = 0.1,
-    temperature = 0.2,
   } = req.body;
 
   if (!query || typeof query !== "string") {
@@ -674,10 +679,10 @@ app.post("/api/chat/stream", async (req, res) => {
   if (ai) {
     try {
       const stream = await ai.models.generateContentStream({
-        model: "gemini-3.8-flash",
+        model: GEMINI_GENERATION_MODEL,
         contents: fullPrompt,
         config: {
-          temperature: typeof temperature === "number" ? temperature : 0.2,
+          thinkingConfig: { thinkingLevel: GEMINI_THINKING_LEVEL },
           systemInstruction: `You are DocuMind, an enterprise Document Intelligence System.
 Answer STRICTLY from the provided context chunks.
 Do NOT fabricate, extrapolate, or bring in outside knowledge.

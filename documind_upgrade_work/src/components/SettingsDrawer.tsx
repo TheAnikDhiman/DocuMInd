@@ -13,7 +13,7 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
   if (!isOpen) return null;
 
   const update = <K extends keyof RAGSettings>(key: K, value: RAGSettings[K]) => setSettings((prev) => ({ ...prev, [key]: value }));
-  const reset = () => setSettings({ template: "auto", top_k: 4, score_threshold: 0.1, temperature: 0.2, index_type: "HNSW", chunk_size: settings.chunk_size, chunk_overlap: settings.chunk_overlap });
+  const reset = () => setSettings({ template: "auto", top_k: 4, score_threshold: 0.1, chunk_size: settings.chunk_size, chunk_overlap: settings.chunk_overlap });
 
   return (
     <div className="fixed inset-0 z-[60] flex justify-end bg-slate-950/25 backdrop-blur-[2px]">
@@ -30,16 +30,15 @@ export const SettingsDrawer: React.FC<SettingsDrawerProps> = ({ isOpen, onClose,
           <div className="space-y-6">
             <SettingRange label="Top-K retrieved chunks" value={settings.top_k} min={1} max={10} step={1} suffix="chunks" onChange={(v) => update("top_k", v)} help="How many nearest chunks are passed into the answer prompt." />
             <SettingRange label="Similarity threshold" value={settings.score_threshold} min={0} max={0.8} step={0.05} suffix="score" onChange={(v) => update("score_threshold", v)} help="Minimum similarity score required before a chunk is considered relevant." />
-            <SettingRange label="Generation temperature" value={settings.temperature} min={0} max={0.7} step={0.05} suffix="temp" onChange={(v) => update("temperature", v)} help="Lower values make grounded answers more deterministic." />
-
             <div>
-              <label className="text-[11px] font-semibold text-slate-700">FAISS index</label>
-              <div className="mt-2 grid grid-cols-3 gap-2">
-                {(["HNSW", "IVF", "FLAT"] as const).map((type) => (
-                  <button key={type} onClick={() => update("index_type", type)} className={`rounded-xl border px-3 py-2.5 text-[10px] font-semibold transition ${settings.index_type === type ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}>{type}</button>
-                ))}
+              <label className="text-[11px] font-semibold text-slate-700">Live retrieval engine</label>
+              <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-slate-800">Exact cosine similarity</span>
+                  <span className="rounded-md bg-white px-2 py-1 text-[9px] font-semibold text-slate-500">Node runtime</span>
+                </div>
+                <p className="mt-2 text-[10px] leading-4 text-slate-400">FAISS HNSW/IVF/Flat scenarios are available through the Python reference backend and benchmark tools; changing them here would not change the live Node retrieval path.</p>
               </div>
-              <p className="mt-2 text-[10px] leading-4 text-slate-400">HNSW is the current default for low-latency semantic retrieval.</p>
             </div>
 
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">

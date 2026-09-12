@@ -4,6 +4,23 @@ DocuMind is an enterprise Retrieval-Augmented Generation (RAG) system that allow
 
 ---
 
+
+## Runtime Architecture
+
+The **Node/Express server (`server.ts`) is the canonical runtime for the current web application**. The React frontend calls its `/api/*` routes directly, including document upload, retrieval, streaming chat, chunks, health, and benchmark endpoints.
+
+The `backend/` Python FastAPI implementation is kept as an **optional/reference backend** for experimentation with the FAISS pipeline. It is not started by the main `npm run dev` command and is not required to run the current UI. Keeping this distinction explicit prevents two backends from being treated as interchangeable production paths.
+
+### Gemini model configuration
+
+Model IDs live in environment variables so they can be changed without editing source code:
+
+- `GEMINI_GENERATION_MODEL` — defaults to `gemini-3.8-flash`
+- `GEMINI_EMBEDDING_MODEL` — defaults to `gemini-embedding-2-preview`
+- `GEMINI_THINKING_LEVEL` — defaults to `medium`
+
+Copy `.env.example` to `.env` and set `GEMINI_API_KEY` before testing Gemini-backed responses. The `.env` file is intentionally ignored by Git.
+
 ## Key Architecture & Components
 
 ### 1. Ingestion Pipeline
@@ -22,7 +39,7 @@ DocuMind is an enterprise Retrieval-Augmented Generation (RAG) system that allow
   - `token_count`: Estimated token size
 
 ### 3. Vector Store & 10,000+ Scalability (FAISS)
-- **Sub-200ms Search SLA**: Efficient vector retrieval capable of handling 10,000+ chunks in under 15ms.
+- **Retrieval**: The current Node runtime performs exact cosine-similarity retrieval over its in-memory chunk store. The optional Python backend provides FAISS HNSW/IVF/Flat implementations for larger-scale experiments.
 - **Supported Index Topologies**:
   - `HNSW` (`IndexHNSWFlat`): Hierarchical Navigable Small World graph for sub-linear query time.
   - `IVF` (`IndexIVFFlat`): Inverted file clustering with Voronoi partitioning (`nprobe=8`) for high vector scale.
@@ -67,7 +84,7 @@ DocuMind is an enterprise Retrieval-Augmented Generation (RAG) system that allow
 │   │   ├── SourceTraceabilityPanel.tsx # Interactive citation & chunk inspector
 │   │   ├── ChunkInspector.tsx      # Cross-document chunk & vector browser
 │   │   ├── BenchmarkModal.tsx      # Live 10k vector latency benchmark
-│   │   └── SettingsDrawer.tsx      # Top-k, temperature, and threshold controls
+│   │   └── SettingsDrawer.tsx      # Top-K, similarity threshold, and runtime notes
 │   ├── types.ts                    # Shared TypeScript interfaces
 │   ├── App.tsx                     # Main layout & stream orchestration
 │   ├── main.tsx                    # React entry point
@@ -129,4 +146,4 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 - **Tune Chunk Size**: Default is 800 characters (~200 tokens). For dense technical documents, 500–650 characters yields higher precision.
 - **Tune Overlap**: Set to 15–20% of chunk size (e.g. 120–150 characters) to prevent information clipping at boundaries.
 - **Top-K Retrieval**: Recommended 4–6 chunks to balance context completeness with inference latency.
-- **Zero-Temperature**: Keep generation temperature at `0.1`–`0.2` to ensure verifiable grounding.
+- **Generation controls**: Gemini 3.8 Flash uses the configured thinking level; the app does not expose the deprecated temperature control.
