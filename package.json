@@ -1,5 +1,6 @@
 {
-  "name": "react-example",
+  "name": "documind",
+  "description": "AI-powered document intelligence and RAG workspace built with React, TypeScript, Gemini, and semantic retrieval.",
   "private": true,
   "version": "0.0.0",
   "type": "module",
